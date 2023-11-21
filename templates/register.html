@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="icon" href="../static/vault-icon.png">
+    <title>Titanpoint | Vault Auth</title>
+    <style>
+        :root {
+            --background-dark: #14121A;
+            --background-accent: #231f2d;
+            --text-light: #DBB45A;
+            --focus-light: rgba(219, 180, 90, .35);
+        }
+        .bg-dark {
+            background-color: var(--background-dark) !important;
+        }
+        .bg-accent {
+            background-color: var(--background-accent) !important;
+        }
+        .text-light {
+            color: var(--text-light) !important;
+        }
+        .border-light {
+            border-color: var(--text-light) !important;
+        }
+        #account-number::placeholder {
+            color: var(--text-light)
+        }
+        .noselect {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+        .main {
+            width: 35%;
+        }
+    </style>
+</head>
+<body class="bg-dark">
+
+    <div class="main bg-accent position-absolute top-50 start-50 translate-middle rounded border border-light d-flex flex-column">
+        <div class="m-4 d-flex flex-column justify-content-between h-100">
+            <img src="../static/titanpoint_vault_updated.svg" class="mb-4 w-75 m-auto">
+            <div class="d-flex flex-column justify-content-center align-items-center w-100 border border-light rounded h-50">
+                <h4 class="text-light mt-3 text-decoration-underline">Register</h4>
+                <span id="help" class="text-light m-3 text-center">Click <b>Create Account</b> to create a random account number.</span>
+                <h3 id="account-number" class="text-light"></h3>
+                <button id="create-account-btn" class="mt-2 mb-3 bg-accent text-light rounded d-flex justify-content-center align-items-center p-3 shadow-sm bg-light border border-light w-50">Create Account</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script>
+        document.getElementById('create-account-btn').addEventListener('click', function() {
+            this.disabled = true;
+
+            function generateRandomNumber() {
+                return Math.floor(1000 + Math.random() * 9000);
+            }
+
+            function updateAccountNumber() {
+                const accountNumberElement = document.getElementById('account-number');
+                accountNumberElement.innerHTML = `${generateRandomNumber()}<span class="noselect"> - </span>${generateRandomNumber()}<span class="noselect"> - </span>${generateRandomNumber()}<span class="noselect"> - </span>${generateRandomNumber()}`;
+            }
+
+            function makePostRequest() {
+                fetch("/register", {
+                    method: "POST",
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data["status"] == "success") {
+                        accountNumberElem = document.getElementById('account-number')
+                        accountNumberElem.innerHTML = data["account_number"];
+                        navigator.clipboard.writeText(data["account_number"].replace(/<span class='noselect'> - <\/span>/g, ''));
+                        document.getElementById('help').innerHTML = "<i>Your account number has been copied to your clipboard.</i><br><b>Tip: Use a password manager to remember your account number.<br>It will be how you log in.</b>";
+                        document.getElementById('create-account-btn').remove();
+                        document.getElementById('account-number').insertAdjacentHTML('afterend', "<a href='/auth' class='mt-2 mb-3 bg-accent text-light rounded d-flex justify-content-center align-items-center p-3 shadow-sm bg-light border border-light w-50'>Sign In</a>")
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+
+                document.getElementById('create-account-btn').disabled = false;
+            }
+
+            const intervalId = setInterval(updateAccountNumber, 100);
+
+            setTimeout(function() {
+                clearInterval(intervalId);
+                makePostRequest();
+            }, 1250);
+        });
+
+    </script>
+</body>
+</html>

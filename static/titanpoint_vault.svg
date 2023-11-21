@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2497.19 704">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke-width: 21px;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        stroke: #dbb459;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-1, .cls-3 {
+        fill: none;
+      }
+
+      .cls-4 {
+        letter-spacing: 0em;
+      }
+
+      .cls-5 {
+        letter-spacing: 0em;
+      }
+
+      .cls-6 {
+        font-family: MetricHPE-Medium, MetricHPE, Arial;
+        font-size: 300px;
+        font-weight: 500;
+      }
+
+      .cls-6, .cls-7 {
+        fill: #dbb459;
+      }
+
+      .cls-8 {
+        letter-spacing: 0em;
+      }
+
+      .cls-9 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-2, .cls-3 {
+        stroke-width: 20px;
+      }
+
+      .cls-10 {
+        letter-spacing: -.09em;
+      }
+
+      .cls-11 {
+        letter-spacing: 0em;
+      }
+
+      .cls-12 {
+        letter-spacing: -.08em;
+      }
+
+      .cls-13 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-7 {
+        font-family: MetricHPE-Black, MetricHPE, Arial;
+        font-size: 459.85px;
+        font-weight: 800;
+      }
+    </style>
+  </defs>
+  <line class="cls-2" x1="400.35" y1="563.07" x2="400.35" y2="563.07"/>
+  <g>
+    <g>
+      <path class="cls-3" d="m125.95,95.58C188.06,31.87,255.99,10,352,10c188.88,0,342,153.12,342,342s-153.12,342-342,342S10,540.88,10,352c0-70.83,21.53-136.63,58.41-191.22"/>
+      <path class="cls-1" d="m362.78,369.89v-85.48c0-1.39,1.13-2.52,2.52-2.52h45.63c1.39,0,2.52,1.13,2.52,2.52v85.48"/>
+      <path class="cls-1" d="m127.89,93.84c-30.56,50.54,31.34,47.6,31.34,47.6h307.81c71.73,0,130.94,57.59,131.19,129.32.25,71.89-57.95,130.24-129.78,130.24h-115.78"/>
+      <path class="cls-3" d="m362.78,433v155.93c0,1.39-1.13,2.52-2.52,2.52h-105.19c-1.39,0-2.52-1.13-2.52-2.52v-300.96c0-1.39-1.13-2.52-2.52-2.52h-114.34c-1.39,0-2.52-1.13-2.52-2.52v-55.38c0-4.02,3.26-7.28,7.28-7.28h2.76"/>
+      <path class="cls-2" d="m413.44,433.3v151.15c0,3.87,3.13,7,7,7h3.07"/>
+    </g>
+    <path class="cls-3" d="m68.14,161.18l1.25-1.88c1.05-1.58,3.18-2.01,4.76-.96l5.44,3.63"/>
+  </g>
+  <text class="cls-6" transform="translate(750.3 318) scale(.62 1)"><tspan x="0" y="0">Ti</tspan><tspan class="cls-13" x="238.8" y="0">t</tspan><tspan class="cls-8" x="336.59" y="0">an</tspan><tspan class="cls-4" x="623.09" y="0">p</tspan><tspan x="777.58" y="0">oint</tspan><tspan class="cls-11" x="0" y="245">Sys</tspan><tspan class="cls-5" x="408" y="245">t</tspan><tspan x="507.3" y="245">ems</tspan></text>
+  <text class="cls-7" transform="translate(1696.45 490.87) scale(.62 1)"><tspan class="cls-12" x="0" y="0">V</tspan><tspan class="cls-9" x="257.52" y="0">A</tspan><tspan x="549.98" y="0">U</tspan><tspan class="cls-10" x="833.25" y="0">L</tspan><tspan x="1027.76" y="0">T</tspan></text>
+  <line class="cls-3" x1="1606.28" y1="107.5" x2="1606.28" y2="596.5"/>
+</svg>

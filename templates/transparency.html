@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="../static/vault-icon.png">
+    <title>Vault Transparency</title>
+</head>
+<body>
+    <h1>Security Transparency - Malware Militia Vault</h1>
+    <span>The following documet was prepared on November 20, 2023.</span>
+    <h2>Account Creation</h2>
+    <h4>Account creation follows the following process:</h4>
+    <ol>
+        <li>After a user clicks "Create Account" on <code>/register</code>, a request is sent to the server for a user account number.<br><b>This will be the sole identifier for a user's account.</b></li>
+        <li>The system generates a pseudorandom 16-digit account number using <code>os.random()</code>, as well as a Version 4 Universally Unique Identifier (UUID) using <code>uuid.uuid4()</code>.<br>This UUID will identify the user's data folder, and will be how the system retrieves the user's files.</li>
+        <li>The account number is encrypted and a user is created in the database.</li>
+    </ol>
+    <h4>Retrieval of or resetting of account credential is not possible. If the user loses their account number, all data associated with that account is lost.</h4>
+
+    <h2>File Storage</h2>
+    <h4>Files are encrypted and decrypted using a quantum-secure algorithm.</h4>
+    <ul>
+        <li>
+            Files and user uploads are encrypted using 256-bit AES in Counter Mode (AES-CTR). Counter Mode requires three elements: a) the <b>C</b>ontent to encrypt; b) a <b>K</b>ey; and c) an initialization vector (<b>IV</b>)
+            <ul>
+                <li>The Content to encrypt is recieved by the system from the user.</li>
+                <li>The Key is derived from the user's encrypted account credential.</li>
+                <li>The IV is generated using <code>os.urandom(16)</code> for each encryption.</li>
+            </ul>
+        </li>
+        <li> If the original content is text, the encrypted contents will be encoded in base64 and written to the database. If the original content is a file, the encrypted contents will be written to a file <code>&lt;filename&gt;.bin</code> in the user's folder; the file path is written to the database.<br>In both cases, the IV is encoded in base64 and stored in the database. The Key is not stored.</li>
+    </ul>
+</body>
+</html>
