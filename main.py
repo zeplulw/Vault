@@ -1,14 +1,16 @@
-from flask import app, Flask, render_template, request, redirect, url_for, make_response, session
+from flask import app, Flask, render_template, request, redirect, url_for, make_response, session, send_file
 import os
 import dotenv
 import json
 import time
 import datetime
 import random
-import argon2
-import aes
-import base64
+from base64 import b64encode, b64decode
 import uuid
+import io
+
+import argon2
+from Crypto.Cipher import AES
 
 dotenv.load_dotenv()
 
@@ -58,11 +60,11 @@ def clean_post_data(data, account_hash):
         postId = post
         post = data[post]
         if post["type"] == "text":
-            encrypted_content = base64.b64decode(post["content"])
-            iv = base64.b64decode(post["content_iv"])
-            key = account_hash[3:19].encode("utf-8") # super duper uber insecure, no bueno
+            encrypted_content = b64decode(post["content"])
+            nonce = b64decode(post["nonce"])
+            key = account_hash[3:35].encode("utf-8") # super duper uber insecure, no bueno
 
-            decrypted_content = aes.AES(key).decrypt_ctr(encrypted_content, iv)
+            decrypted_content = AES.new(key, AES.MODE_CTR, nonce=nonce).decrypt(encrypted_content)
 
             cleaned_data.append({
                 "postId": postId,
@@ -72,23 +74,35 @@ def clean_post_data(data, account_hash):
             })
 
         elif post["type"] == "file":
-            file_path = os.path.join("vault-files", user_folder, post["filename"])
+            if post["filename"].split(".")[-2] in ("png", "jpg", "jpeg", "svg"):
 
-            with open(file_path, "rb") as f:
-                encrypted_content = f.read()
+                file_path = os.path.join("vault-files", user_folder, post["filename"])
 
-            iv = base64.b64decode(post["file_iv"])
-            key = account_hash[3:19].encode("utf-8")
+                with open(file_path, "rb") as f:
+                    encrypted_content = f.read()
 
-            decrypted_content = aes.AES(key).decrypt_ctr(encrypted_content, iv)
+                key = account_hash[3:35].encode("utf-8")
 
-            cleaned_data.append({
-                "postId": postId,
-                "type": "file",
-                "date": post["date"],
-                "filename": post["filename"],
-                "content": base64.b64encode(decrypted_content).decode("utf-8")
-            })
+                decrypted_content = AES.new(key, AES.MODE_CTR, nonce=b64decode(post["nonce"])).decrypt(encrypted_content)
+
+                cleaned_data.append({
+                    "postId": postId,
+                    "type": "file",
+                    "date": post["date"],
+                    "filename": post["filename"],
+                    "content": b64encode(decrypted_content).decode("utf-8")
+                })
+
+            else:
+                cleaned_data.append({
+                    "postId": postId,
+                    "type": "file",
+                    "date": post["date"],
+                    "filename": post["filename"]
+                })
+
+    # Most recent entires first
+    cleaned_data = cleaned_data[::-1]
 
     return cleaned_data
     
@@ -97,6 +111,44 @@ def clean_post_data(data, account_hash):
 def index():
     return redirect(url_for("vault"))
 
+@app.route("/download", methods=["GET"])
+def download():
+    account_hash = session["account_number_hash"]
+
+    with open("vault.json", "r") as f:
+        vault_data = json.load(f)
+
+    try:
+        session["account_number_hash"] in vault_data["accounts"].keys()
+    except KeyError:
+        return make_response(redirect(url_for("auth")))
+    
+    if request.args.get("postId") == None:
+        return make_response(redirect(url_for("vault")))
+    
+    postId = request.args.get("postId")
+
+    user_data = vault_data["accounts"][session["account_number_hash"]]
+
+    post = user_data["uploads"][postId]
+
+    if post["type"] == "file":
+        file_path = os.path.join("vault-files", user_data["user-folder"], post["filename"])
+
+        with open(file_path, "rb") as f:
+            encrypted_content = f.read()
+
+        key = account_hash[3:35].encode("utf-8")
+
+        decrypted_content = AES.new(key, AES.MODE_CTR, nonce=b64decode(post["nonce"])).decrypt(encrypted_content)
+
+        file = io.BytesIO(decrypted_content)
+
+        return send_file(file, as_attachment=True, download_name=post["filename"][0:-4])
+    
+    else:
+        return make_response(redirect(url_for("vault")))
+    
 @app.route("/transparency")
 def transparency():
 
@@ -144,6 +196,7 @@ def auth():
 
     try:
         if session["account_number_hash"] in vault_data["accounts"].keys():
+            session.clear()
             return make_response(redirect(url_for("vault")))
     except KeyError:
         pass
@@ -171,11 +224,11 @@ def vault():
 
     try:
         if session["account_number_hash"] in vault_data["accounts"].keys():
-            return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]))
-        else:
-            return make_response(redirect(url_for("auth")))
-    except KeyError:
+            pass
+    except:
         return make_response(redirect(url_for("auth")))
+    
+    return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]), user_folder=vault_data["accounts"][session["account_number_hash"]]["user-folder"])
     
 @app.route("/vault", methods=["POST"])
 def vault_post():
@@ -198,24 +251,27 @@ def vault_post():
         if content == "":
             return render_template("vault.html", post_data=vault_data["accounts"][session["account_number_hash"]]["uploads"])
         
-        key = session["account_number_hash"][3:19].encode("utf-8")
-        iv = os.urandom(16)
+        key = session["account_number_hash"][3:35].encode("utf-8")
 
-        encrypted_content = aes.AES(key).encrypt_ctr(content.encode("utf-8"), iv)
+        cipher = AES.new(key, AES.MODE_CTR)
+        encrypted_content = cipher.encrypt(content.encode("utf-8"))
 
-        postId = max(user_data["uploads"].keys(), key=int) + 1
+        if not user_data["uploads"]:
+            postId = 1
+        else:
+            postId = max(user_data["uploads"].keys(), key=int) + 1
 
         vault_data["accounts"][session["account_number_hash"]]["uploads"][postId] = {
             "type": "text",
-            "content": base64.b64encode(encrypted_content).decode("utf-8"),
-            "content_iv": base64.b64encode(iv).decode("utf-8"),
+            "content": b64encode(encrypted_content).decode("utf-8"),
+            "nonce": b64encode(cipher.nonce).decode("utf-8"),
             "date": time.time()
         }
 
         with open("vault.json", "w") as f:
             json.dump(vault_data, f, indent=4)
 
-        return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]))
+        return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]), user_folder=vault_data["accounts"][session["account_number_hash"]]["user-folder"])
     
     elif request.form.get("post-type") == "2":
         file = request.files["file-content"]
@@ -223,17 +279,20 @@ def vault_post():
         if file.filename == "":
             return render_template("vault.html", post_data=vault_data["accounts"][session["account_number_hash"]]["uploads"])
         
-        key = session["account_number_hash"][3:19].encode("utf-8")
-        iv = os.urandom(16)
+        key = session["account_number_hash"][3:35].encode("utf-8")
 
-        encrypted_content = aes.AES(key).encrypt_ctr(file.read(), iv)
+        cipher = AES.new(key, AES.MODE_CTR)
+        encrypted_content = cipher.encrypt(file.read())
 
-        postId = max(user_data["uploads"].keys(), key=int) + 1
+        if not user_data["uploads"]:
+            postId = 1
+        else:
+            postId = max(user_data["uploads"].keys(), key=int) + 1
 
         vault_data["accounts"][session["account_number_hash"]]["uploads"][postId] = {
             "type": "file",
             "filename": file.filename,
-            "file_iv": base64.b64encode(iv).decode("utf-8"),
+            "nonce": b64encode(cipher.nonce).decode("utf-8"),
             "date": time.time()
         }
 
@@ -243,7 +302,7 @@ def vault_post():
         with open(os.path.join("vault-files", user_data["user-folder"], postId + "-" + file.filename), "wb") as f:
             f.write(encrypted_content)
 
-        return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]))
+        return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]), user_folder=vault_data["accounts"][session["account_number_hash"]]["user-folder"])
 
     # if request.cookies.get("authentication") == os.getenv("PERSISTENT_AUTH_SECRET"):
     #     if request.form.get("post-type") == "1":
