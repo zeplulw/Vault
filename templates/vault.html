@@ -168,7 +168,7 @@
                         <div id="{{ post['postId'] }}" class="vault-text d-flex justify-content-between align-items-center m-4">
                             <div class="d-flex flex-column">
                                 <span class="timestamp text-light mb-2">{{ post["date"] }}</span>
-                                <span class="text-content text-light">{{ post['content'] }}</span>
+                                <p class="text-content text-light">{{ post['content'] }}</p>
                             </div>
                             <div class="btn-group">
                                 <button type="button" class="btn bg-light" data-bs-toggle="dropdown" aria-expanded="false"><img src="../static/bars-solid.svg" height="16"></button>
@@ -196,7 +196,7 @@
                                 {% else %}
                                     <div class="file-preview border border-light rounded bg-dark d-flex align-items-center position-relative mt-3" style="width: 300px; height: 60px">
                                         <img class="yellow-svg-filter h-50 ms-3" src="../static/file-solid.svg">
-                                        <span class="text-light ms-3">{{ post['filename'][0:-4] }}</span>
+                                        <span class="text-light ms-3" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post['filename'][0:-4] }}</span>
                                         <a target="_blank" href="/download?postId={{ post['postId'] }}" style="width: 40px; height: 40px; top: 10px; left: 287px;" class="file-download bg-dark border border-light position-absolute translate-middle rounded d-flex align-items-center justify-content-center">
                                             <img src="../static/download-solid.svg" class="yellow-svg-filter" height="20">
                                         </a>
@@ -305,7 +305,6 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    authentication: getCookie("authentication"),
                     postId: editBtn.parentElement.parentElement.children[1].children[0].dataset.postId,
                     content: editBtn.parentElement.parentElement.children[1].children[0].value
                 })
@@ -313,7 +312,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data["status"] == "success") {
-                    document.getElementById(`${editBtn.parentElement.parentElement.children[1].children[0].dataset.postId}`).children[0].children[1].innerText = editBtn.parentElement.parentElement.children[1].children[0].value
+                    document.getElementById(`${editBtn.parentElement.parentElement.children[1].children[0].dataset.postId}`).children[0].children[1].innerHTML = editBtn.parentElement.parentElement.children[1].children[0].value
                     editBtn.parentElement.children[0].click()
                 }
             })

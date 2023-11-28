@@ -28,7 +28,7 @@ if _type == "text":
         "type": "text",
         "content": b64encode(encrypted_content).decode("utf-8"),
         "nonce": b64encode(cipher.nonce).decode("utf-8"),
-        "date": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     with open("vault.json", "w") as f:
@@ -73,7 +73,7 @@ elif _type == "file":
         "type": "file",
         "filename": output_path,
         "nonce": b64encode(cipher.nonce).decode("utf-8"),
-        "date": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     with open("vault.json", "w") as f:

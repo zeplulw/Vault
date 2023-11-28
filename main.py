@@ -249,23 +249,23 @@ def vault_post():
         content = request.form.get("text-content")
 
         if content == "":
-            return render_template("vault.html", post_data=vault_data["accounts"][session["account_number_hash"]]["uploads"])
+            return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]), user_folder=vault_data["accounts"][session["account_number_hash"]]["user-folder"])
         
+        if not user_data["uploads"]:
+            postId = 1
+        else:
+            postId = int(max(user_data["uploads"].keys(), key=int)) + 1
+
         key = session["account_number_hash"][3:35].encode("utf-8")
 
         cipher = AES.new(key, AES.MODE_CTR)
         encrypted_content = cipher.encrypt(content.encode("utf-8"))
 
-        if not user_data["uploads"]:
-            postId = 1
-        else:
-            postId = max(user_data["uploads"].keys(), key=int) + 1
-
         vault_data["accounts"][session["account_number_hash"]]["uploads"][postId] = {
             "type": "text",
             "content": b64encode(encrypted_content).decode("utf-8"),
             "nonce": b64encode(cipher.nonce).decode("utf-8"),
-            "date": time.time()
+            "date": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         }
 
         with open("vault.json", "w") as f:
@@ -279,6 +279,8 @@ def vault_post():
         if file.filename == "":
             return render_template("vault.html", post_data=vault_data["accounts"][session["account_number_hash"]]["uploads"])
         
+        file.filename = file.filename + ".bin"
+        
         key = session["account_number_hash"][3:35].encode("utf-8")
 
         cipher = AES.new(key, AES.MODE_CTR)
@@ -287,113 +289,65 @@ def vault_post():
         if not user_data["uploads"]:
             postId = 1
         else:
-            postId = max(user_data["uploads"].keys(), key=int) + 1
+            postId = int(max(user_data["uploads"].keys(), key=int)) + 1
 
         vault_data["accounts"][session["account_number_hash"]]["uploads"][postId] = {
             "type": "file",
             "filename": file.filename,
             "nonce": b64encode(cipher.nonce).decode("utf-8"),
-            "date": time.time()
+            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
         with open("vault.json", "w") as f:
             json.dump(vault_data, f, indent=4)
 
-        with open(os.path.join("vault-files", user_data["user-folder"], postId + "-" + file.filename), "wb") as f:
+        with open(os.path.join("vault-files", user_data["user-folder"], file.filename), "wb") as f:
             f.write(encrypted_content)
 
         return render_template("vault.html", post_data=clean_post_data(vault_data["accounts"][session["account_number_hash"]], session["account_number_hash"]), user_folder=vault_data["accounts"][session["account_number_hash"]]["user-folder"])
 
-    # if request.cookies.get("authentication") == os.getenv("PERSISTENT_AUTH_SECRET"):
-    #     if request.form.get("post-type") == "1":
-
-    #         content = request.form.get("text-content")
-            
-    #         with open("vault.json", "r") as f:
-    #             vault_data = json.load(f)
-
-    #         if content == "":
-    #             return render_template("vault.html", post_data=vault_data["accounts"][session["account_number_hash"]]["uploads"])
-
-    #         postId = str(vault_data["currentId"] + 1)
-
-    #         vault_data[postId] = {
-    #             "type": "text",
-    #             "date": time.time(),
-    #             "content": f"{postId}-{content}"
-    #         }
-
-    #         vault_data["currentId"] += 1
-
-    #         with open("vault.json", "w") as f:
-    #             json.dump(vault_data, f, indent=4)
-
-    #         vault_data.pop("currentId")
-    #         return render_template("vault.html", post_data=vault_data["accounts"][session["account_number_hash"]]["uploads"])
-
-    #     elif request.form.get("post-type") == "2":
-
-    #         with open("vault.json", "r") as f:
-    #             vault_data = json.load(f)
-
-    #         postId = str(vault_data["currentId"] + 1)
-
-
-    #         fileNames = []
-    #         for file in request.files.getlist("file-content"):
-
-    #             file.save(os.path.join("static/vault-files", f"{postId}-{file.filename}"))
-
-    #             fileNames.append(f"{postId}-{file.filename}")
-                
-    #         vault_data[postId] = {
-    #             "type": "file",
-    #             "date": time.time(),
-    #             "filename": f"{'|'.join(fileNames)}"
-    #         }
-
-    #         vault_data["currentId"] += 1
-
-    #         with open("vault.json", "w") as f:
-    #             json.dump(vault_data, f, indent=4)
-
-    #         vault_data.pop("currentId")
-    #         return render_template("vault.html", post_data=vault_data["accounts"][session["account_number_hash"]]["uploads"])
-
-    #     else:
-    #         return redirect(url_for("vault"))
-
 @app.route("/vault", methods=["DELETE"])
 def vault_delete():
-    if request.json["authentication"] == os.getenv("PERSISTENT_AUTH_SECRET"):
-        with open("vault.json", "r") as f:
-            vault_data = json.load(f)
+    with open("vault.json", "r") as f:
+        vault_data = json.load(f)
 
-        postId = request.json["postId"]
+    try:
+        if session["account_number_hash"] in vault_data["accounts"].keys():
 
-        if vault_data[postId]["type"] == "file":
-            fileList = vault_data[postId]["filename"].split("|")
-            
-            for file in fileList:
-                os.remove(os.path.join("static/vault-files", file))
+            postId = request.json["postId"]
 
-        vault_data.pop(postId)
+            vault_data["accounts"][session["account_number_hash"]]["uploads"].pop(postId)
 
-        with open("vault.json", "w") as f:
-            json.dump(vault_data, f, indent=4)
+            with open("vault.json", "w") as f:
+                json.dump(vault_data, f, indent=4)
 
-        return {"status": "success"}
+            return {"status": "success"}
+
+        else:
+            return {"status": "error", "error": "user not registered"}
     
+    except KeyError as e:
+        return {"status": "error", "error": "user not registered"}
+
 @app.route("/vault", methods=["PUT"])
 def vault_put():
-    if request.json["authentication"] == os.getenv("PERSISTENT_AUTH_SECRET"):
-        with open("vault.json", "r") as f:
+    with open("vault.json", "r") as f:
             vault_data = json.load(f)
+
+    if session["account_number_hash"] in vault_data["accounts"].keys():
 
         postId = request.json["postId"]
 
-        if vault_data[postId]["type"] == "text":
-            vault_data[postId]["content"] = f"{postId}-{request.json['content']}"
+        if vault_data["accounts"][session["account_number_hash"]]["uploads"][postId]["type"] == "text":
+            content = request.json["content"]
+
+            key = session["account_number_hash"][3:35].encode("utf-8")
+
+            cipher = AES.new(key, AES.MODE_CTR)
+            encrypted_content = cipher.encrypt(content.encode("utf-8"))
+
+            vault_data["accounts"][session["account_number_hash"]]["uploads"][postId]["content"] = b64encode(encrypted_content).decode("utf-8")
+            vault_data["accounts"][session["account_number_hash"]]["uploads"][postId]["nonce"] = b64encode(cipher.nonce).decode("utf-8")
 
         with open("vault.json", "w") as f:
             json.dump(vault_data, f, indent=4)
