@@ -195,7 +195,7 @@ def auth():
         vault_data = json.load(f)
 
     try:
-        if session["account_number_hash"] in vault_data["accounts"].keys():
+        if session["account_number_hash"]:
             session.clear()
             return make_response(redirect(url_for("vault")))
     except KeyError:
@@ -265,7 +265,7 @@ def vault_post():
             "type": "text",
             "content": b64encode(encrypted_content).decode("utf-8"),
             "nonce": b64encode(cipher.nonce).decode("utf-8"),
-            "date": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            "date": datetime.datetime.now().strftime("%B %d, %Y %#I:%M %p")
         }
 
         with open("vault.json", "w") as f:
@@ -295,7 +295,7 @@ def vault_post():
             "type": "file",
             "filename": file.filename,
             "nonce": b64encode(cipher.nonce).decode("utf-8"),
-            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "date": datetime.datetime.now().strftime("%B %d, %Y %#I:%M %p")
         }
 
         with open("vault.json", "w") as f:
@@ -315,6 +315,10 @@ def vault_delete():
         if session["account_number_hash"] in vault_data["accounts"].keys():
 
             postId = request.json["postId"]
+
+            if vault_data["accounts"][session["account_number_hash"]]["uploads"][postId]["type"] == "file":
+                file_path = os.path.join("vault-files", vault_data["accounts"][session["account_number_hash"]]["user-folder"], vault_data["accounts"][session["account_number_hash"]]["uploads"][postId]["filename"])
+                os.remove(file_path)
 
             vault_data["accounts"][session["account_number_hash"]]["uploads"].pop(postId)
 
