@@ -7,29 +7,53 @@
     <title>Vault Transparency</title>
 </head>
 <body>
-    <h1>Security Transparency - Malware Militia Vault</h1>
-    <span>The following documet was prepared on November 20, 2023.</span>
+    <h1>Security Transparency - Titanpoint Systems Vault</h1>
+    <span>The following document was prepared on November 20, 2023 and is meant for a more technical audience; updated March 4, 2024</span><br>
+    <span><b>(Please) Don't use this for confidential or otherwise private information. This is a pet project for a cybersecurity undergrad, and even though data is encrypted, there is no guarantee it is secure.</b></span>
     <h2>Account Creation</h2>
     <h4>Account creation follows the following process:</h4>
     <ol>
-        <li>After a user clicks "Create Account" on <code>/register</code>, a request is sent to the server for a user account number.<br><b>This will be the sole identifier for a user's account.</b></li>
-        <li>The system generates a pseudorandom 16-digit account number using <code>os.random()</code>, as well as a Universally Unique Identifier (UUID) using <code>uuid.uuid4()</code>.<br>This UUID will identify the user's data folder, and will be how the system retrieves the user's files.</li>
-        <li>The account number is encrypted and a user is created in the database.</li>
+        <li>The user navigates to <code>/register</code> and click "Create Account."</li>
+        <li>The system will create a 16-digit account number that will effectively be used as the user's password. 16 is an arbitrary value, but results in 8.99 quadrillion possible account numbers. See Mullvad's <a href="https://mullvad.net/en/blog/2017/6/20/mullvads-account-numbers-get-longer-and-safer">blog post</a> regarding guessability of account numbers.<br><b>This will be the only method of authentication, no other information will be collected; therefore, account number recovery is impossible.</b></li>
+        <li>The system will create a version 4 UUID to serve as the location for the user's storage location, and create the respective directory</li>
+        <li>An <code>argon2</code> hashed version of the account number will be defined as the primary key for the database entry, and other information will be added to their entry. A "JSON-ified" skeleton is included below:</li>
     </ol>
-    <h4>Retrieval of or resetting of account credential is not possible. If the user loses their account number, all data associated with that account is lost.</h4>
-
-    <h2>File Storage</h2>
-    <h4>Files are encrypted and decrypted using a quantum-secure algorithm.</h4>
+    <pre>
+        <code>
+    "accounts": {
+        "hashed_account_number": {
+            "user-folder": "UUID",
+            "uploads": {
+                "upload-id": {
+                    "nonce": "base64",
+                    ...
+                }
+            }
+        }
+    }</code>
+    </pre>
+    <h2>User Uploads</h2>
+    <span>Text and File uploads are encrypted with AES-256 in Counter Mode (CTR). This requires three parts:</span>
     <ul>
-        <li>
-            Files and user uploads are encrypted using 256-bit AES in Counter Mode (AES-256-CTR). Counter Mode requires three elements: a) the <b>C</b>ontent to encrypt; b) a <b>K</b>ey; and c) a <b>N</b>once
-            <ul>
-                <li>The Content to encrypt is recieved by the system from the user.</li>
-                <li>The Key is derived from the user's encrypted account credential.</li>
-                <li>The Nonce is generated randomly number unique to each encryption.</li>
-            </ul>
-        </li>
-        <li> If the original content is text, the encrypted contents will be encoded in base64 and written to the database. If the original content is a file, the encrypted contents will be written to a file <code>&lt;filename&gt;.bin</code> in the user's folder; the file path is written to the database.<br>In both cases, the nonce is encoded in base64 and stored in the database. The Key is never stored.</li>
+        <li>Plaintext: The raw data to encrypt. Uploaded Text content is encoded with UTF-8.</li>
+        <li>Key: The key used to encrypt the Text or File plaintext.</li>
+        <li>Nonce: Arbitrary number used to ensure that ciphertext is different even if plaintext is identical.</li>
+    </ul>
+
+    The Nonce is stored inside of the post's database entry. The Key is derived from the user's account number.
+
+    <h4>Depending on the type of the upload, the ciphertext is stored differently.</h4>
+    <ul>
+        <li>Text: Ciphertext is encoded with Base64 and stored inside of the post's database entry.</li>
+        <li>File: Ciphertext is stored inside of the user's directory as <code>&lt;filename&gt;.bin</code>. As of now, if two files are uploaded with the same name, the newer one overwrites the older and corrupts the older download. (womp womp?)</li>
+    </ul>
+
+    <h2>Third-Party Libraries</h2>
+    <span>Third-party libraries used in this project are as follows:</span>
+    <ul>
+        <li><a href="https://flask.palletsprojects.com/en/3.0.x/">Flask</a></li>
+        <li><a href="https://github.com/hynek/argon2-cffi">argon2-cffi</a></li>
+        <li><a href="https://github.com/Legrandin/pycryptodome">pycryptodome</a></li>
     </ul>
 </body>
 </html>
