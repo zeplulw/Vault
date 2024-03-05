@@ -2,7 +2,6 @@ from flask import app, Flask, render_template, request, redirect, url_for, make_
 import os
 import dotenv
 import json
-import time
 import datetime
 import random
 from base64 import b64encode, b64decode
@@ -20,12 +19,12 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
 def generate_account_number():
-    account_number = str(random.randint(1111111111111111, 9999999999999999))
+    account_number = str(random.randint(1000000000000000, 9999999999999999))
 
     with open("vault.json", "r") as f:
         vault_data = json.load(f)
 
-    if account_number in vault_data["accounts"].keys():
+    if generate_argon2_hash(account_number) in vault_data["accounts"].keys():
         generate_account_number()
 
     return account_number, [account_number[i:i+4] for i in range(0, len(account_number), 4)]
@@ -64,7 +63,7 @@ def clean_post_data(data, account_hash):
             nonce = b64decode(post["nonce"])
             key = account_hash[3:35].encode("utf-8") # super duper uber insecure, no bueno
 
-            decrypted_content = AES.new(key, AES.MODE_CTR, nonce=nonce).decrypt(encrypted_content)
+            decrypted_content = AES.new(key, AES.MODE_CTR, nonce=nonce, use_aesni=True).decrypt(encrypted_content)
 
             cleaned_data.append({
                 "postId": postId,
@@ -83,7 +82,7 @@ def clean_post_data(data, account_hash):
 
                 key = account_hash[3:35].encode("utf-8")
 
-                decrypted_content = AES.new(key, AES.MODE_CTR, nonce=b64decode(post["nonce"])).decrypt(encrypted_content)
+                decrypted_content = AES.new(key, AES.MODE_CTR, nonce=b64decode(post["nonce"]), use_aesni=True).decrypt(encrypted_content)
 
                 cleaned_data.append({
                     "postId": postId,
@@ -140,7 +139,7 @@ def download():
 
         key = account_hash[3:35].encode("utf-8")
 
-        decrypted_content = AES.new(key, AES.MODE_CTR, nonce=b64decode(post["nonce"])).decrypt(encrypted_content)
+        decrypted_content = AES.new(key, AES.MODE_CTR, nonce=b64decode(post["nonce"]), use_aesni=True).decrypt(encrypted_content)
 
         file = io.BytesIO(decrypted_content)
 
@@ -258,7 +257,7 @@ def vault_post():
 
         key = session["account_number_hash"][3:35].encode("utf-8")
 
-        cipher = AES.new(key, AES.MODE_CTR)
+        cipher = AES.new(key, AES.MODE_CTR, use_aesni=True)
         encrypted_content = cipher.encrypt(content.encode("utf-8"))
 
         vault_data["accounts"][session["account_number_hash"]]["uploads"][postId] = {
@@ -283,7 +282,7 @@ def vault_post():
         
         key = session["account_number_hash"][3:35].encode("utf-8")
 
-        cipher = AES.new(key, AES.MODE_CTR)
+        cipher = AES.new(key, AES.MODE_CTR, use_aesni=True)
         encrypted_content = cipher.encrypt(file.read())
 
         if not user_data["uploads"]:
@@ -347,7 +346,7 @@ def vault_put():
 
             key = session["account_number_hash"][3:35].encode("utf-8")
 
-            cipher = AES.new(key, AES.MODE_CTR)
+            cipher = AES.new(key, AES.MODE_CTR, use_aesni=True)
             encrypted_content = cipher.encrypt(content.encode("utf-8"))
 
             vault_data["accounts"][session["account_number_hash"]]["uploads"][postId]["content"] = b64encode(encrypted_content).decode("utf-8")
