@@ -106,7 +106,16 @@
             right: 16px;
             transition-duration: 0.1s;
         }
-        #newPostToggle:hover {
+        #logOut {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 48px;
+            height: 48px;
+            transition-duration: 0.1s;
+        }
+        #newPostToggle:hover,
+        #logOut:hover {
             scale: 0.95;
         }
         #bottomSpacer {
@@ -161,6 +170,11 @@
         .image-content {
             background-color: var(--background-dark);
         }
+        #logout {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+        }
     </style>
 </head>
 <body class="bg-dark">
@@ -211,7 +225,7 @@
                                 {% else %}
                                     <div class="file-preview border border-light rounded bg-dark d-flex align-items-center position-relative mt-3" style="width: 300px; height: 60px">
                                         <img class="yellow-svg-filter h-50 ms-3" src="../static/file-solid.svg">
-                                        <span class="text-light ms-3" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post['filename'][0:-4] }}</span>
+                                        <span class="text-light ms-3 me-3" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post['filename'][0:-4] }}</span>
                                         <a target="_blank" href="/download?postId={{ post['postId'] }}" style="width: 40px; height: 40px; top: 10px; left: 287px;" class="file-download bg-dark border border-light position-absolute translate-middle rounded d-flex align-items-center justify-content-center">
                                             <img src="../static/download-solid.svg" class="yellow-svg-filter" height="20">
                                         </a>
@@ -257,8 +271,11 @@
         <!-- <input id="file-content" class="form-control bg-accent text-light border border-light m-2" type="file" name="file-content"> -->
         <button id="postFormSbmt" type="submit" class="bg-accent text-light border border-light ms-2 mb-2 rounded p-1">Upload</button>
     </form>
-    <button id="newPostToggle" class="position-fixed rounded bg-accent border border-light" onclick='var postForm=document.getElementById("postForm"),newPostToggle=document.getElementById("newPostToggle");postForm.classList.contains("d-flex")?(postForm.classList.remove("d-flex"),postForm.classList.add("d-none")):(postForm.classList.remove("d-none"),postForm.classList.add("d-flex"));'>
+    <button title="New Post" id="newPostToggle" class="position-fixed rounded bg-accent border border-light" onclick='var postForm=document.getElementById("postForm"),newPostToggle=document.getElementById("newPostToggle");postForm.classList.contains("d-flex")?(postForm.classList.remove("d-flex"),postForm.classList.add("d-none")):(postForm.classList.remove("d-none"),postForm.classList.add("d-flex"));'>
         <img src="../static/plus-minus-solid.svg" height="20" class="yellow-svg-filter">
+    </button>
+    <button title="Log Out" id="logOut" class="rounded bg-accent border border-light" onclick="document.cookie='';location.href='/auth'">
+        <img src="../static/logout.svg" height="28" class="yellow-svg-filter">
     </button>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/linkifyjs@4.1.3/dist/linkify.min.js"></script>
