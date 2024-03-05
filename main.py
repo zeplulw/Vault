@@ -129,7 +129,10 @@ def download():
 
     user_data = vault_data["accounts"][session["account_number_hash"]]
 
-    post = user_data["uploads"][postId]
+    try:
+        post = user_data["uploads"][postId]
+    except KeyError:
+        return make_response(redirect(url_for("vault")))
 
     if post["type"] == "file":
         file_path = os.path.join("vault-files", user_data["user-folder"], post["filename"])
